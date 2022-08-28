@@ -3,40 +3,126 @@ import Product from '../dataProduct/product'
 import Toping from '../dataToping/toping'
 import NavbarList from '../components/Navbar'
 import Payment from '../components/Payment'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useContext } from 'react'
+import { useParams, useNavigate } from "react-router-dom";
 import { UserContext } from '../context/UserContext'
 import React from 'react';
 
+// Import useQuery and useMutation
+import { useQuery, useMutation } from "react-query";
 
-export default function Cart(){
+// API config
+import { API } from "../config/api";
+
+export default function DetailProduct() {
+    let navigate = useNavigate();
+    let { id } = useParams();
+    let api = API();
+
+
+// export default function Cart(){
 
     const [show, setShow] = useState(false)
     const handleClose = () => setShow(false);
     const [donePay, setDonePay] = useState(false)
     const [state, dispatch] = useContext(UserContext)
 
-    const payProduct = () => {
-        setShow(true)
+    // const payProduct = () => {
+    //     setShow(true)
 
-        const data ={
-            email:state.user.username,
-            password:state.user.password,
-            cartStatus:false
-        }
+    //     const data ={
+    //         email:state.user.username,
+    //         password:state.user.password,
+    //         cartStatus:false
+    //     }
 
-        dispatch({
-            type: 'ADD_PAY',
-            userStat: 'user',
-            payload: data
-          })
-        setDonePay(true)
-        
-    }
+    //     dispatch({
+    //         type: 'ADD_PAY',
+    //         userStat: 'user',
+    //         payload: data
+    //       })
+    //     setDonePay(true)
+    //     // if(donePay === true){
+    //     //     setDonePay(false)
+    //     // }
+    // }
 
     const deleteProduct = () => {
         alert('DeleteProduct')
     }
+
+    useEffect(() => {
+        //change this to the script source you want to load, for example this is snap.js sandbox env
+        const midtransScriptUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
+        //change this according to your client-key
+        const myMidtransClientKey = "Client key here ...";
+      
+        let scriptTag = document.createElement("script");
+        scriptTag.src = midtransScriptUrl;
+        // optional if you want to set script attribute
+        // for example snap.js have data-client-key attribute
+        scriptTag.setAttribute("data-client-key", myMidtransClientKey);
+      
+        document.body.appendChild(scriptTag);
+        return () => {
+          document.body.removeChild(scriptTag);
+        };
+      }, []);
+
+
+      const payProduct = useMutation(async () => {
+        try {
+          // Get data from product
+          const data = {
+            productId: Product.id,
+            buyerId: Product.user.id,
+            price: Product.price,
+          };
+    
+          // Data body
+          const body = JSON.stringify(data);
+    
+          // Configuration
+          const config = {
+            method: "POST",
+            headers: {
+              Authorization: "Basic " + localStorage.token,
+              "Content-type": "application/json",
+            },
+            body,
+          };    
+
+
+            const response = await api.post("/transaction", config);
+
+            const token = response.data.token;
+
+            window.snap.pay(token, {
+            onSuccess: function (result) {
+                /* You may add your own implementation here */
+                console.log(result);
+                navigate.push("/profile");
+            },
+            onPending: function (result) {
+                /* You may add your own implementation here */
+                console.log(result);
+                navigate.push("/profile");
+            },
+            onError: function (result) {
+                /* You may add your own implementation here */
+                console.log(result);
+            },
+            onClose: function () {
+                /* You may add your own implementation here */
+                alert("you closed the popup without finishing the payment");
+            },
+            });
+        } catch (error) {
+            console.log(error);
+          }
+        });
+
 
     return(
         <>
@@ -108,6 +194,7 @@ export default function Cart(){
                         <p>239.000</p>
                     </div>
                     <button onClick={()=>payProduct()} style={styles.btnPay}>Pay</button>
+                    
                 </div>
             </div>
 
@@ -198,6 +285,4 @@ const styles = {
         height:'30px',
         justifyContent:'space-between'
     }
-
-
 }

@@ -7,7 +7,8 @@ type Transaction struct {
 	BuyerID int                  `json:"buyer_id"`
 	Buyer   UsersProfileResponse `json:"buyer"`
 	Price   int                  `json:"price"`
-	//ProductID []int                `json:"product_id"`
+	Product Product               `json:"product_id"`
+	Total     int       `json:"total"`
 	Status    string    `json:"status"  gorm:"type:varchar(25)"`
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
@@ -21,4 +22,8 @@ type TransactionResponse struct {
 	Status    string               `json:"status"  gorm:"type:varchar(25)"`
 	CreatedAt time.Time            `json:"-"`
 	UpdatedAt time.Time            `json:"-"`
+}
+
+func (TransactionResponse) TableName() string {
+	return "transactions"
 }
